@@ -40,31 +40,27 @@ func run(token, login string) error {
 		query {
 			user(login:"bradleyfalzon") {
 				pullRequests(states:[OPEN], first:10, orderBy: {field: UPDATED_AT, direction: ASC}) {
-				edges {
-				node {
-					title
-					url
-					mergeable
+					nodes {
+						title
+						url
+						mergeable
+					}
 				}
-				}
-			}
 			}
 		}
 	*/
 
 	type pull struct {
-		Node struct {
-			Title     githubql.String
-			URL       githubql.String
-			UpdatedAt githubql.DateTime
-			Mergeable githubql.MergeableState
-		}
+		Title     githubql.String
+		URL       githubql.String
+		UpdatedAt githubql.DateTime
+		Mergeable githubql.MergeableState
 	}
 
 	var pullsQuery struct {
 		User struct {
 			PullRequests struct {
-				Edges    []pull
+				Nodes    []pull
 				PageInfo struct {
 					EndCursor   githubql.String
 					HasNextPage githubql.Boolean
@@ -85,7 +81,7 @@ func run(token, login string) error {
 		if err != nil {
 			return err
 		}
-		pulls = append(pulls, pullsQuery.User.PullRequests.Edges...)
+		pulls = append(pulls, pullsQuery.User.PullRequests.Nodes...)
 		if !pullsQuery.User.PullRequests.PageInfo.HasNextPage {
 			break
 		}
@@ -100,7 +96,7 @@ func run(token, login string) error {
 	// Display results.
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 	for _, pull := range pulls {
-		fmt.Fprintf(w, "%v\t %q\t %q\t %v\n", pull.Node.Mergeable, pull.Node.UpdatedAt, pull.Node.Title, pull.Node.URL)
+		fmt.Fprintf(w, "%v\t %q\t %q\t %v\n", pull.Mergeable, pull.UpdatedAt, pull.Title, pull.URL)
 	}
 	w.Flush()
 
